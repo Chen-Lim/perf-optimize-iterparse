@@ -80,4 +80,4 @@ No Python environment required. Download the pre-built binary packages directly:
 ### ✍️ About the Author
 I'm **LEEcDiang**, a developer passionate about health data and studio-grade tools. 
 If you find this tool helpful, check out more of my thoughts and tutorials on my blog:
-👉 [**leecdiang.github.io**]([https://leecdiang.github.io](https://leecdiang.github.io/myblog-source/))
+👉 [**leecdiang.github.io**](https://leecdiang.github.io/myblog-source/)
