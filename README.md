@@ -1,4 +1,5 @@
-# Apple Health Pro 🍎
+# Apple Health Pro 🍎 [![Downloads](https://img.shields.io/github/downloads/leecdiang/Apple-Health-Pro/total?style=for-the-badge&color=9B2C2C)](https://github.com/leecdiang/Apple-Health-Pro/releases)
+
 #### A Studio-Grade Data Engine for Apple Health Export.
 #### Apple Health Pro 是一款专为数据分析师、健康极客和开发者设计的跨平台桌面工具。它能够高效解析 Apple 健康导出的巨型 XML 压缩包，并将其转化为结构清晰、开箱即用的专业级数据集。
 
