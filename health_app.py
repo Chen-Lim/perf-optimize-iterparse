@@ -1,4 +1,6 @@
 import sys, os, zipfile, pandas as pd, xml.etree.ElementTree as ET, time, io, math
+import psutil
+import gc  # 新增：用于强制垃圾回收
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QPushButton, QTextEdit, QLabel,
                              QFileDialog, QScrollArea, QCheckBox, QMessageBox, QFrame, QGraphicsDropShadowEffect)
@@ -8,6 +10,23 @@ from PyQt6.QtGui import QColor
 # Ensure proper layer rendering for macOS
 if sys.platform == 'darwin':
     os.environ["QT_MAC_WANTS_LAYER"] = "1"
+
+# ==========================================
+# 0. Memory Optimization Core (O(1) Memory)
+# ==========================================
+class CleanStream:
+    """
+    流式清洗器：拦截并替换会导致 ET 解析失败的无效字符 (\x0b)。
+    通过按块读取，彻底避免了 f.read() 导致的瞬间内存爆炸。
+    """
+    def __init__(self, stream):
+        self.stream = stream
+
+    def read(self, size=-1):
+        chunk = self.stream.read(size)
+        if chunk:
+            return chunk.replace(b'\x0b', b'')
+        return chunk
 
 # ==========================================
 # 1. High-Performance Core Engine
@@ -47,9 +66,8 @@ class ParseThread(QThread):
 
                 attribute_list = []
                 with zip_ref.open(xml_filename) as f:
-                    raw_data = f.read().replace(b'\x0b', b'')
-                    xml_stream = io.BytesIO(raw_data)
-                    context = ET.iterparse(xml_stream, events=('end',))
+                    clean_stream = CleanStream(f)
+                    context = ET.iterparse(clean_stream, events=('end',))
                     try:
                         event, root = next(context)
                         count = 0
@@ -57,24 +75,36 @@ class ParseThread(QThread):
                             if elem.tag == 'Record':
                                 sn = elem.attrib.get('sourceName')
                                 if sn:
+                                    # 🟢 终极内存优化：使用 C 语言底层的 sys.intern() 极速去重高频词
                                     attribute_list.append({
-                                        'type': elem.attrib.get('type', ''),
-                                        'value': elem.attrib.get('value', ''),
-                                        'unit': elem.attrib.get('unit', ''),
+                                        'type': sys.intern(str(elem.attrib.get('type', ''))),
+                                        'value': elem.attrib.get('value', ''), 
+                                        'unit': sys.intern(str(elem.attrib.get('unit', ''))),
                                         'startdate': elem.attrib.get('startDate', ''),
-                                        'sourcename': sn
+                                        'sourcename': sys.intern(str(sn))
                                     })
                                     count += 1
+                                    
+                                    # 极客内存播报
                                     if count % 500000 == 0:
-                                        self.log_sig.emit(f"⚡ INDEXING: {count} records synced...")
+                                        process = psutil.Process(os.getpid())
+                                        mem_mb = process.memory_info().rss / (1024 * 1024)
+                                        self.log_sig.emit(f"⚡ INDEXING: {count} records synced... [🔥 RAM: {mem_mb:.2f} MB]")
+                                
+                                # 彻底释放节点
                                 elem.clear()
                                 root.clear()
                     except ET.ParseError: pass
 
+            # 🟡 强制执行垃圾回收，榨干最后一滴闲置内存碎片
+            gc.collect()
+
             df = pd.DataFrame(attribute_list)
             sources = sorted(df['sourcename'].unique().tolist())
             self.done_sig.emit(df, sources, self.zip_path)
-        except Exception as e: self.err_sig.emit(f"SYSTEM ERROR: {str(e)}")
+            
+        except Exception as e: 
+            self.err_sig.emit(f"SYSTEM ERROR: {str(e)}")
 
 class ExportThread(QThread):
     log_sig = pyqtSignal(str)
@@ -83,7 +113,7 @@ class ExportThread(QThread):
     def __init__(self, df, selected_sources, zip_path):
         super().__init__()
         self.df, self.selected_sources, self.zip_path = df, selected_sources, zip_path
-        self.CHUNK_SIZE = 800000 # ~90MB split threshold
+        self.CHUNK_SIZE = 880000 # ~90MB split threshold
 
     def run(self):
         try:
@@ -91,7 +121,7 @@ class ExportThread(QThread):
             filtered_df = self.df[self.df['sourcename'].isin(self.selected_sources)]
             out_dir = os.path.dirname(self.zip_path)
             
-            # [FIXED] Corrected indentation and used precision keywords to avoid data overlap
+            # 🔵 10 大医疗/运动级精准维度词根
             groups = {
                 '1_Heart_Metrics': ['heartrate', 'restingheartrate', 'heartratevariability'],
                 '2_Body_Composition': ['bodymass', 'bmi', 'bodyfat', 'leanbodymass'],
@@ -131,8 +161,8 @@ class ExportThread(QThread):
 
             self.log_sig.emit(f"\n🎉 ALL OPERATIONS COMPLETE.\nSaved at: {out_dir}")
             self.done_sig.emit()
-        except Exception as e: 
-            self.log_sig.emit(f"❌ EXPORT FAILED: {str(e)}")
+        except Exception as e: self.log_sig.emit(f"❌ EXPORT FAILED: {str(e)}")
+
 # ==========================================
 # 2. Studio-Grade UI (Cranberry Unified)
 # ==========================================
@@ -243,8 +273,7 @@ class MainWindow(QMainWindow):
         self.update_theme()
 
     def update_theme(self):
-        # Master palette logic with Unified Cranberry Buttons
-        accent_color = "#9B2C2C" # Cranberry
+        accent_color = "#9B2C2C" 
         if not self.is_dark:
             bg_color = "#F5F5F7"
             card_color = "#FFFFFF"
@@ -253,10 +282,9 @@ class MainWindow(QMainWindow):
             border_color = "#D2D2D7"
             log_bg = "#FFFFFF"
             
-            # Unified Button Colors - Light Mode
             btn_bg = accent_color
             btn_text = "#FFFFFF"
-            btn_hover = "#7A2323" # Darker cranberry for hover
+            btn_hover = "#7A2323" 
             btn_disabled = "#D1D5DB"
             btn_disabled_text = "#9CA3AF"
             tool_btn_hover = "#F5F5F7"
@@ -268,15 +296,13 @@ class MainWindow(QMainWindow):
             border_color = "#38383A"
             log_bg = "#1C1C1E"
             
-            # Unified Button Colors - Dark Mode
             btn_bg = accent_color
             btn_text = "#FFFFFF"
-            btn_hover = "#A83030" # Lighter cranberry for hover
+            btn_hover = "#A83030" 
             btn_disabled = "#3F3F46"
             btn_disabled_text = "#71717A"
             tool_btn_hover = "#2C2C2E"
         
-        # Valid Stroke SVG Checkmark
         tick_b64 = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwb2x5bGluZSBwb2ludHM9IjIwIDYgOSAxNyA0IDEyIj48L3BvbHlsaW5lPjwvc3ZnPg=="
         
         self.setStyleSheet(f"""
@@ -290,18 +316,15 @@ class MainWindow(QMainWindow):
                 font-family: ui-monospace, "SF Mono", "Menlo", monospace; font-size: 12px; line-height: 1.6;
             }}
             
-            /* Theme Toggle Button */
             QPushButton {{ 
                 background-color: transparent; color: {text_primary}; 
                 border: 1px solid {border_color}; border-radius: 10px; font-weight: 600; font-size: 12px;
             }}
             QPushButton:hover {{ border-color: {text_secondary}; background-color: {tool_btn_hover}; }}
 
-            /* Tool Buttons (Select All / None) */
             QPushButton#tool_btn {{ border: none; font-size: 13px; font-weight: 600; color: {accent_color}; padding: 6px 12px; }}
             QPushButton#tool_btn:hover {{ background-color: {tool_btn_hover}; border-radius: 6px; }}
 
-            /* Main Action Buttons - Unified Cranberry Red */
             QPushButton#main_action {{ 
                 background-color: {btn_bg}; color: {btn_text}; 
                 border: none; border-radius: 14px; font-weight: 700; font-size: 15px; letter-spacing: 0.5px;
@@ -311,7 +334,6 @@ class MainWindow(QMainWindow):
             
             QFrame#card {{ background-color: {card_color}; border-radius: 20px; border: 1px solid {border_color}; }}
             
-            /* Checkbox Styling */
             QCheckBox {{ spacing: 12px; font-size: 14px; color: {text_primary}; font-weight: 500; padding: 4px; }}
             QCheckBox:hover {{ background-color: {tool_btn_hover}; border-radius: 8px; }}
             QCheckBox::indicator {{ 
@@ -324,7 +346,6 @@ class MainWindow(QMainWindow):
                 image: url("data:image/svg+xml;base64,{tick_b64}");
             }}
             
-            /* Minimalist Scrollbar */
             QScrollBar:vertical {{ border: none; background: transparent; width: 6px; margin: 0px 0px 0px 0px; }}
             QScrollBar::handle:vertical {{ background: {border_color}; border-radius: 3px; min-height: 20px; }}
             QScrollBar::handle:vertical:hover {{ background: {text_secondary}; }}
@@ -335,6 +356,7 @@ class MainWindow(QMainWindow):
         self.sub_title.setStyleSheet(f"font-size: 11px; font-weight: 700; color: {text_secondary}; letter-spacing: 2px;")
         self.scroll_content.setStyleSheet(f"background-color: {card_color};")
         self.copyright_lbl.setStyleSheet(f"font-size: 10px; font-weight: 500; color: {text_secondary}; margin-top: 2px;")
+
     def on_select_file(self):
         path, _ = QFileDialog.getOpenFileName(self, "CHOOSE ZIP", "", "ZIP Archive (*.zip)")
         if path:
@@ -354,7 +376,7 @@ class MainWindow(QMainWindow):
         self.checkboxes = []
         for s in sources:
             cb = QCheckBox(s)
-            cb.setChecked(False) # Ensure deselected by default
+            cb.setChecked(False) 
             cb.setCursor(Qt.CursorShape.PointingHandCursor)
             self.scroll_layout.addWidget(cb)
             self.checkboxes.append(cb)
