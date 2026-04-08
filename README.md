@@ -5,6 +5,8 @@
 
 #### Apple Health Pro is a high-performance cross-platform desktop tool designed for data analysts, health enthusiasts, and developers. It efficiently parses massive Apple Health XML export archives and transforms them into organized, analysis-ready professional datasets.
 
+<img width="850" height="878" alt="image" src="https://github.com/user-attachments/assets/e665bf0c-7272-40ce-9183-927bac3cb543" />
+
 ## ✨核心功能 (Core Features)
 #### ⚡️高性能流式解析 (High-Performance Parsing)
 采用 iterparse 空间优化技术。即使面对数 GB 级别的 export.xml，也能保证极低的内存占用，彻底告别程序崩溃。
