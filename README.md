@@ -44,6 +44,7 @@ For large-scale time-series data, the app executes auto-sharding. Files are auto
 #### 准备数据 (Prepare Data)
 在 iPhone “健康” App 中点击头像 -> “导出所有健康数据”。获得 export.zip。
 Export data in the iPhone "Health" App via Profile -> "Export All Health Data" to obtain export.zip.
+<img width="1179" height="563" alt="image" src="https://github.com/user-attachments/assets/9eead494-93f8-4040-9ac5-8d38b6a02fe1" />
 
 #### 加载与索引 (Load & Index)
 启动程序，点击 SELECT DATA ARCHIVE (.ZIP)。系统执行索引构建。
@@ -65,6 +66,8 @@ You are a professional analyst with expertise in exercise physiology, cardiovasc
 [One-Sentence Conclusion]: Provide a direct assessment of the overall health status (Healthy / Sub-healthy / At-risk) without ambiguity.
 [Physiological System Breakdown Analysis]: Analyze four key areas—the cardiovascular system (Heart Rate, HRV, Resting Heart Rate), the nervous system (Sympathetic/Parasympathetic balance based on HRV), the sleep recovery system, and metabolism/activity levels. You must explain the underlying physiological mechanisms rather than merely reporting surface-level observations.
 [Trend Modeling]: Based on time-series data, identify periodic fluctuations and determine whether there are long-term trends of improvement or deterioration.
+<img width="2442" height="1804" alt="image" src="https://github.com/user-attachments/assets/1658d1ca-fdeb-4142-9187-0a0a14b010c2" />
+
 
 ## 📥下载与安装 (Installation)
 无需配置 Python 环境，直接下载构建完成的二进制包：
