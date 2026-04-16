@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=HealthPro
+Comment=Studio-Grade Data Engine for Apple Health Export
+Exec=healthpro
+Icon=healthpro
+Terminal=false
+Type=Application
+Categories=Utility;DataVisualization;Science;
+Keywords=health;apple;data;export;csv;
+StartupNotify=true
+StartupWMClass=healthpro
