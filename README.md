@@ -81,7 +81,21 @@ No Python environment required. Download the pre-built binary packages directly:
 
 #### macOS: HealthPro_v8.5.0_macOS_IntelChip.dmg （Intel CPU）
 
-##### (注：macOS 初次运行请右键图标选择“打开” / Note: For macOS, right-click and select "Open" for the first launch)
+##### (注：macOS 初次运行请右键图标选择”打开” / Note: For macOS, right-click and select “Open” for the first launch)
+
+#### Linux: HealthPro-8.4.0-x86_64.AppImage (通用 / Universal)
+
+#### Linux: healthpro_8.4.0_amd64.deb (Debian / Ubuntu)
+
+```bash
+# AppImage — 下载即用 / Download and run directly
+chmod +x HealthPro-8.4.0-x86_64.AppImage
+./HealthPro-8.4.0-x86_64.AppImage
+
+# Debian/Ubuntu — deb 安装 / Install with dpkg
+sudo dpkg -i healthpro_8.4.0_amd64.deb
+sudo apt-get install -f   # 自动修复依赖 / Fix dependencies if needed
+```
 
 
 ## © 2026 LEEcDiang. All rights reserved.
