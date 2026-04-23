@@ -210,3 +210,13 @@ __marimo__/
 # uv
 uv.lock
 .python-version
+
+# idea
+.idea/
+
+# macOS
+.DS_Store
+
+# docs
+docs/
+docs/rust-sidecar/
